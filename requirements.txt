@@ -7,4 +7,3 @@ waitress
 openai
 psycopg2-binary
 ffmpeg
-openai-whisper  # Change "whisper" to "openai-whisper"
