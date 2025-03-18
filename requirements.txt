@@ -1,15 +1,10 @@
-# Example requirements.txt:
 Flask
 werkzeug
 Pillow
-uuid
-gunicorn
-waitress
-openai
+sqlite3  # Built-in, no need to install
+uuid  # Built-in, no need to install
+gunicorn  # Required for production deployment
+waitress  # Optional (for Windows deployments)
+whisper  # For voice transcription
+openai  # If using OpenAI's API
 psycopg2-binary
-
-# CPU-only PyTorch for Python 3.11
-torch==2.6.0+cpu -f https://download.pytorch.org/whl/cpu
-
-# Whisper from GitHub
-git+https://github.com/openai/whisper.git#egg=openai-whisper
