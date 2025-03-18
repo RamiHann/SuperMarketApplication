@@ -1,7 +1,6 @@
 Flask
 werkzeug
 Pillow
-sqlite3  # Built-in, no need to install
 uuid  # Built-in, no need to install
 gunicorn  # Required for production deployment
 waitress  # Optional (for Windows deployments)
