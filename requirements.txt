@@ -1,3 +1,4 @@
+# Example requirements.txt:
 Flask
 werkzeug
 Pillow
@@ -6,5 +7,9 @@ gunicorn
 waitress
 openai
 psycopg2-binary
-torch==2.0.1+cpu -f https://download.pytorch.org/whl/cpu
+
+# CPU-only PyTorch for Python 3.11
+torch==2.6.0+cpu -f https://download.pytorch.org/whl/cpu
+
+# Whisper from GitHub
 git+https://github.com/openai/whisper.git#egg=openai-whisper
