@@ -7,3 +7,4 @@ waitress
 openai
 psycopg2-binary
 ffmpeg
+openai-whisper
