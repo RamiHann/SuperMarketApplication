@@ -7,5 +7,5 @@ waitress
 openai
 psycopg2-binary
 ffmpeg
-git+https://github.com/openai/whisper.git # Add correct source
+
 git+https://github.com/openai/whisper.git
