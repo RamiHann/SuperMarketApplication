@@ -6,7 +6,5 @@ gunicorn
 waitress
 openai
 psycopg2-binary
-# CPU-only PyTorch (no CUDA)
 torch==2.0.1+cpu -f https://download.pytorch.org/whl/cpu
-# Install Whisper from GitHub
 git+https://github.com/openai/whisper.git#egg=openai-whisper
