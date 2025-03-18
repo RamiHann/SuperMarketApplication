@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Add Subcategory</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<header>
+    <h1>Supermarket Admin - Add Subcategory</h1>
+</header>
+<nav>
+    <a href="{{ url_for('index') }}">Home</a>
+    <a href="{{ url_for('admin_categories') }}">Manage Categories</a>
+    <a href="{{ url_for('logout') }}">Logout</a>
+</nav>
+<div class="container">
+    <h2>Add a New Subcategory</h2>
+    <form action="{{ url_for('add_subcategory_route') }}" method="POST" enctype="multipart/form-data">
+        <div class="form-group">
+            <label for="parentCategory">Select Parent Category:</label>
+            <select id="parentCategory" name="parentCategory" required>
+                <option value="">-- choose --</option>
+                {% for cat in categories %}
+                <option value="{{ cat.category_id }}">{{ cat.category_name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="subCategoryName">Subcategory Name:</label>
+            <input type="text" id="subCategoryName" name="subCategoryName" required/>
+        </div>
+        <div class="form-group">
+            <label for="subCategoryPrice">Price:</label>
+            <input type="text" id="subCategoryPrice" name="subCategoryPrice" placeholder="e.g. 9.99"/>
+        </div>
+        <div class="form-group">
+            <label for="subcategoryImage">Subcategory Image:</label>
+            <input type="file" id="subcategoryImage" name="subcategoryImage"/>
+        </div>
+        <button type="submit">Add Subcategory</button>
+    </form>
+</div>
+</body>
+</html>

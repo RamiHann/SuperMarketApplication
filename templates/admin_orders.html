@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Admin Orders</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        /* Optional: additional styling for the orders table */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+
+        table, th, td {
+            border: 1px solid #ddd;
+        }
+
+        th, td {
+            padding: 0.5rem;
+            text-align: left;
+        }
+
+        th {
+            background-color: #f2f2f2;
+        }
+
+        details {
+            background: #fafafa;
+            padding: 0.5rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+<header>
+    <h1>Admin - Orders</h1>
+</header>
+<nav>
+    <a href="{{ url_for('index') }}">Home</a>
+    <a href="{{ url_for('admin_categories') }}">Manage Categories</a>
+    <a href="{{ url_for('admin_orders') }}">Orders</a>
+    <a href="{{ url_for('logout') }}">Logout ({{ session.username }})</a>
+</nav>
+<div class="container">
+    <h2>Orders</h2>
+    {% if orders|length == 0 %}
+    <p>No orders yet.</p>
+    {% else %}
+    <table>
+        <thead>
+        <tr>
+            <th>Order ID</th>
+            <th>Username</th>
+            <th>Date</th>
+            <th>Total</th>
+            <th>Details</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for order in orders %}
+        <tr>
+            <td>{{ order.order_id }}</td>
+            <td>{{ order.username }}</td>
+            <td>{{ order.order_date }}</td>
+            <td>${{ "%.2f"|format(order.order_total) }}</td>
+            <td>
+                <details>
+                    <summary>View Items</summary>
+                    <ul>
+                        {% for item in order.parsed_details %}
+                        <li>{{ item.name }} &mdash; Qty: {{ item.quantity }}</li>
+                        {% endfor %}
+                    </ul>
+                </details>
+            </td>
+        </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    {% endif %}
+</div>
+</body>
+</html>

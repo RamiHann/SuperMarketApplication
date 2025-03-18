@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Manage Categories</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        /* Additional styles for an excellent admin dashboard view */
+        .action-buttons {
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .action-buttons a button {
+            margin: 0 10px;
+            font-size: 1rem;
+            padding: 10px 20px;
+            cursor: pointer;
+        }
+
+        .category-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            justify-content: center;
+        }
+
+        .category-card {
+            background: #fff;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            padding: 15px;
+            width: 300px;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .category-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+        }
+
+        .category-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .category-header img {
+            width: 80px;
+            height: auto;
+            border-radius: 4px;
+            margin-right: 10px;
+        }
+
+        .category-title {
+            flex-grow: 1;
+            font-size: 1.2rem;
+            font-weight: bold;
+        }
+
+        .category-actions form {
+            display: inline;
+        }
+
+        details.subcategories-list {
+            margin-top: 10px;
+            border-top: 1px solid #eee;
+            padding-top: 10px;
+        }
+
+        details.subcategories-list summary {
+            cursor: pointer;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .subcategory-item {
+            display: flex;
+            align-items: center;
+            margin: 5px 0;
+        }
+
+        .subcategory-item img {
+            width: 50px;
+            height: auto;
+            border-radius: 4px;
+            margin-right: 10px;
+        }
+
+        .subcategory-actions form {
+            margin-left: auto;
+        }
+
+        @media (max-width: 768px) {
+            .category-card {
+                width: 45%;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .category-card {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+<header>
+    <h1>Supermarket Admin Panel</h1>
+</header>
+<nav>
+    <a href="{{ url_for('index') }}">Home</a>
+    {% if 'username' in session %}
+    {% if session.role == 'admin' %}
+    <a href="{{ url_for('admin_categories') }}">Manage Categories</a>
+    <a href="{{ url_for('admin_orders') }}">Orders</a>
+    {% endif %}
+    <a href="{{ url_for('cart') }}">Cart</a>
+    <a href="{{ url_for('logout') }}">Logout ({{ session.username }})</a>
+    {% else %}
+    <a href="{{ url_for('login') }}">Login</a>
+    <a href="{{ url_for('register') }}">Register</a>
+    <a href="{{ url_for('cart') }}">Cart</a>
+    {% endif %}
+</nav>
+
+<div class="container">
+    <h2>Manage Categories</h2>
+    <div class="action-buttons">
+        <a href="{{ url_for('add_category_route') }}">
+            <button>Add Category</button>
+        </a>
+        <a href="{{ url_for('add_subcategory_route') }}">
+            <button>Add Subcategory</button>
+        </a>
+    </div>
+    <div class="category-list">
+        {% for cat in categories %}
+        <div class="category-card">
+            <div class="category-header">
+                <img src="{{ url_for('static', filename=cat['image_path']) }}" alt="{{ cat['category_name'] }}">
+                <div class="category-title">{{ cat['category_name'] }}</div>
+                <div class="category-actions">
+                    <form action="{{ url_for('delete_category', category_id=cat.category_id) }}" method="POST"
+                          onsubmit="return confirm('Are you sure you want to delete this category?');">
+                        <button type="submit">Delete</button>
+                    </form>
+                </div>
+            </div>
+            <details class="subcategories-list">
+                <summary>Show Subcategories</summary>
+                {% for sub in subcategories %}
+                {% if sub.parent_id == cat.category_id %}
+                <div class="subcategory-item">
+                    <img src="{{ url_for('static', filename=sub['subcategory_image']) }}"
+                         alt="{{ sub['subcategory_name'] }}">
+                    <span>{{ sub['subcategory_name'] }}{% if sub.price %} - ${{ sub.price }}{% endif %}</span>
+                    <div class="subcategory-actions">
+                        <form action="{{ url_for('delete_subcategory', subcategory_id=sub.subcategory_id) }}"
+                              method="POST" onsubmit="return confirm('Delete this subcategory?');">
+                            <button type="submit">Delete</button>
+                        </form>
+                    </div>
+                </div>
+                {% endif %}
+                {% endfor %}
+            </details>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+</body>
+</html>

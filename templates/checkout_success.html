@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Order Confirmed</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <style>
+    /* Additional styles specific to checkout success */
+    .success-container {
+      text-align: center;
+      padding: 50px 20px;
+    }
+    .success-message {
+      font-size: 1.8rem;
+      color: #4CAF50;
+      margin-bottom: 20px;
+    }
+    .order-total {
+      font-size: 1.2rem;
+      margin-bottom: 30px;
+    }
+    .btn-home {
+      background-color: #4CAF50;
+      color: #fff;
+      padding: 10px 20px;
+      text-decoration: none;
+      border-radius: 5px;
+      font-size: 1rem;
+      transition: background-color 0.3s ease;
+    }
+    .btn-home:hover {
+      background-color: #45a049;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Supermarket Application</h1>
+  </header>
+  <nav>
+    <a href="{{ url_for('index') }}">Home</a>
+    {% if 'username' in session %}
+      <a href="{{ url_for('logout') }}">Logout ({{ session.username }})</a>
+    {% else %}
+      <a href="{{ url_for('login') }}">Login</a>
+    {% endif %}
+    <a href="{{ url_for('cart') }}">Cart</a>
+  </nav>
+  <div class="container success-container">
+    <div class="success-message">
+      <p>Thank you for your purchase!</p>
+      <p>Your order has been successfully placed.</p>
+    </div>
+    <div class="order-total">
+      <p>Total: ${{ "%.2f"|format(total) }}</p>
+    </div>
+    <a class="btn-home" href="{{ url_for('index') }}">Go to Home</a>
+  </div>
+</body>
+</html>

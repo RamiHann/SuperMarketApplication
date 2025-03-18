@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Shopping Cart</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        /* Cart Table Styles */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        table, th, td {
+            border: 1px solid #ddd;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: center;
+        }
+
+        th {
+            background-color: #f4f4f4;
+        }
+
+        .cart-item-img {
+            width: 60px;
+            height: auto;
+            border-radius: 4px;
+        }
+
+        .update-form input[type="number"] {
+            width: 60px;
+            padding: 5px;
+        }
+
+        .update-form button {
+            padding: 5px 10px;
+            margin-left: 5px;
+        }
+
+        .checkout-btn {
+            background-color: #4CAF50;
+            color: #fff;
+            border: none;
+            padding: 12px 20px;
+            font-size: 1rem;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+
+        .checkout-btn:hover {
+            background-color: #45a049;
+        }
+
+        /* Recent Orders Section */
+        #orders-list {
+            margin-top: 20px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background: #fafafa;
+        }
+
+        /* Enhanced Chatbot Widget Styles */
+        #chatbot-container {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 350px;
+            max-width: 95%;
+            background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+            border: 1px solid #ccc;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+        }
+
+        #chatbot-header {
+            background: #28a745;
+            color: #fff;
+            padding: 12px;
+            text-align: center;
+            font-size: 1.2rem;
+            font-weight: bold;
+        }
+
+        #chatbot-messages {
+            padding: 12px;
+            height: 220px;
+            overflow-y: auto;
+            background: #fff;
+            border-bottom: 1px solid #ccc;
+        }
+
+        #chatbot-input-area {
+            display: flex;
+            padding: 10px;
+            gap: 5px;
+            background: #f1f1f1;
+        }
+
+        #chatbot-input {
+            flex: 1;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 1rem;
+        }
+
+        #chatbot-send, #chatbot-speech {
+            padding: 8px 12px;
+            background: #28a745;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+
+        #chatbot-send:hover, #chatbot-speech:hover {
+            background: #218838;
+        }
+
+        /* Order item styling for chatbot order details */
+        .order-item {
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 8px;
+            margin: 8px 0;
+            display: flex;
+            align-items: center;
+            background: #fff;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .order-item img {
+            width: 60px;
+            height: auto;
+            border-radius: 4px;
+            margin-right: 10px;
+        }
+
+        .order-item-details p {
+            margin: 2px 0;
+            font-size: 0.95rem;
+        }
+    </style>
+</head>
+<body>
+<header>
+    <h1>My Cart</h1>
+</header>
+<nav>
+    <a href="{{ url_for('index') }}">Home</a>
+    {% if 'username' in session %}
+    <a href="{{ url_for('logout') }}">Logout ({{ session.username }})</a>
+    {% else %}
+    <a href="{{ url_for('login') }}">Login</a>
+    {% endif %}
+    <a href="{{ url_for('cart') }}">Cart</a>
+</nav>
+<div class="container">
+    <h2>Your Cart</h2>
+    {% if cart_items|length == 0 %}
+    <p>Your cart is empty.</p>
+    {% else %}
+    <table>
+        <thead>
+        <tr>
+            <th>Product</th>
+            <th>Price</th>
+            <th>Quantity</th>
+            <th>Subtotal</th>
+            <th>Update</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for item in cart_items %}
+        <tr>
+            <td>
+                <img class="cart-item-img" src="{{ url_for('static', filename=item.image) }}" alt="{{ item.name }}">
+                <br>{{ item.name }}
+            </td>
+            <td>${{ "%.2f"|format(item.price) }}</td>
+            <td>{{ item.quantity }}</td>
+            <td>${{ "%.2f"|format(item.subtotal) }}</td>
+            <td>
+                <form class="update-form" action="{{ url_for('update_cart') }}" method="POST">
+                    <input type="hidden" name="subcategory_id" value="{{ item.subcategory_id }}">
+                    <input type="number" name="new_quantity" value="{{ item.quantity }}" min="0">
+                    <button type="submit">Update</button>
+                </form>
+            </td>
+        </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    <h3>Total: ${{ "%.2f"|format(total) }}</h3>
+    <form action="{{ url_for('checkout') }}" method="POST">
+        <button type="submit" class="checkout-btn">Proceed to Checkout</button>
+    </form>
+    {% endif %}
+</div>
+
+<!-- Recent Orders Section -->
+<div class="container">
+    <h2>Your Recent Orders</h2>
+    <div id="orders-list">
+        <!-- This section will be auto-refreshed with orders via AJAX -->
+    </div>
+</div>
+
+<!-- Chatbot Widget -->
+<div id="chatbot-container">
+    <div id="chatbot-header">Chat with Our AI</div>
+    <div id="chatbot-messages"></div>
+    <div id="chatbot-input-area">
+        <input type="text" id="chatbot-input" placeholder="Type your message...">
+        <button id="chatbot-send">Send</button>
+        <button id="chatbot-speech">Start Speech</button>
+    </div>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        let conversation = "";
+        const chatbotMessages = document.getElementById("chatbot-messages");
+        const chatbotInput = document.getElementById("chatbot-input");
+        const sendBtn = document.getElementById("chatbot-send");
+        const speechBtn = document.getElementById("chatbot-speech");
+
+        // Append a message to the chat window
+        function appendMessage(sender, message) {
+            const msgDiv = document.createElement("div");
+            msgDiv.style.marginBottom = "10px";
+            msgDiv.innerHTML = `<strong>${sender}:</strong> ${message}`;
+            chatbotMessages.appendChild(msgDiv);
+            chatbotMessages.scrollTop = chatbotMessages.scrollHeight;
+        }
+
+        // Append a nicely formatted order item block
+        function appendOrderItem(item) {
+            const itemDiv = document.createElement("div");
+            itemDiv.classList.add("order-item");
+            itemDiv.innerHTML = `
+                    <img src="{{ url_for('static', filename='') }}${item.image}" alt="${item.name}">
+                    <div class="order-item-details">
+                        <p><strong>${item.name}</strong></p>
+                        <p>Price: $${item.price}</p>
+                        <p>Quantity: ${item.quantity}</p>
+                    </div>
+                `;
+            chatbotMessages.appendChild(itemDiv);
+            chatbotMessages.scrollTop = chatbotMessages.scrollHeight;
+        }
+
+        // Refresh recent orders list (only the orders list container)
+        async function refreshOrdersList() {
+            try {
+                const response = await fetch("{{ url_for('get_user_orders') }}");
+                const data = await response.json();
+                const ordersListDiv = document.getElementById("orders-list");
+                ordersListDiv.innerHTML = ""; // clear current content
+                if (data.orders && data.orders.length > 0) {
+                    data.orders.forEach(order => {
+                        const orderDiv = document.createElement("div");
+                        orderDiv.style.border = "1px solid #ccc";
+                        orderDiv.style.borderRadius = "5px";
+                        orderDiv.style.padding = "10px";
+                        orderDiv.style.marginBottom = "10px";
+                        orderDiv.innerHTML = `<strong>Order ID:</strong> ${order.order_id} <br>
+                                                  <strong>Total:</strong> $${order.order_total} <br>
+                                                  <strong>Date:</strong> ${order.order_date} <br>`;
+                        if (order.details && Array.isArray(order.details)) {
+                            order.details.forEach(item => {
+                                const itemDiv = document.createElement("div");
+                                itemDiv.style.display = "flex";
+                                itemDiv.style.alignItems = "center";
+                                itemDiv.style.marginTop = "5px";
+                                itemDiv.innerHTML = `<img src="{{ url_for('static', filename='') }}${item.image}" style="width:50px; margin-right:10px;">
+                                                         <span>${item.name} - $${item.price} x ${item.quantity}</span>`;
+                                orderDiv.appendChild(itemDiv);
+                            });
+                        }
+                        ordersListDiv.appendChild(orderDiv);
+                    });
+                } else {
+                    ordersListDiv.innerHTML = "<p>No recent orders found.</p>";
+                }
+            } catch (error) {
+                console.error("Error fetching orders:", error);
+            }
+        }
+
+        // Refresh orders list every 10 seconds
+        setInterval(refreshOrdersList, 10000);
+        // Also load orders list on page load
+        refreshOrdersList();
+
+        // Save conversation to the server
+        function saveConversation() {
+            return fetch("{{ url_for('save_conversation') }}", {
+                method: "POST",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify({conversation: conversation})
+            })
+                .then(response => response.json())
+                .then(data => {
+                    console.log("Conversation saved:", data);
+                    return data;
+                })
+                .catch(error => {
+                    console.error("Error saving conversation:", error);
+                });
+        }
+
+        // Send a text message; if "checkout" is detected, process checkout via /chat_checkout
+        async function sendMessage() {
+            const userText = chatbotInput.value.trim();
+            if (!userText) return;
+            appendMessage("You", userText);
+            conversation += "You: " + userText + "\n";
+            chatbotInput.value = "";
+
+            // Normalize for checkout detection
+            const normalized = userText.replace(/\s/g, "").toLowerCase();
+            if (normalized === "checkout") {
+                try {
+                    const response = await fetch("{{ url_for('chat_checkout') }}", {
+                        method: "POST",
+                        headers: {"Content-Type": "application/json"}
+                    });
+                    const data = await response.json();
+                    appendMessage("Bot", data.message);
+                    conversation += "Bot: " + data.message + "\n";
+                    if (data.order_items && Array.isArray(data.order_items)) {
+                        data.order_items.forEach(item => {
+                            appendOrderItem(item);
+                        });
+                    }
+                    await saveConversation();
+                } catch (error) {
+                    console.error("Error during checkout:", error);
+                    appendMessage("Bot", "There was an error processing your checkout.");
+                }
+                return;
+            }
+
+            try {
+                // Call custom AI endpoint for non-checkout queries
+                const response = await fetch("{{ url_for('my_own_ai') }}", {
+                    method: "POST",
+                    headers: {"Content-Type": "application/json"},
+                    body: JSON.stringify({user_message: userText})
+                });
+                const data = await response.json();
+                const botReply = data.bot_reply;
+                appendMessage("Bot", botReply);
+                // Optionally, store bot's reply:
+                // conversation += "Bot: " + botReply + "\n";
+                await saveConversation();
+            } catch (error) {
+                console.error("Error calling /my_own_ai:", error);
+                appendMessage("Bot", "Error with custom AI.");
+            }
+        }
+
+        sendBtn.addEventListener("click", sendMessage);
+        chatbotInput.addEventListener("keyup", function (event) {
+            if (event.key === "Enter") {
+                sendMessage();
+            }
+        });
+
+        // ----- Audio Recording Only (No Speech-to-Text) -----
+        let mediaRecorder;
+        let audioChunks = [];
+        let recording = false;
+
+        speechBtn.addEventListener("click", function () {
+            if (recording) {
+                mediaRecorder.stop();
+                speechBtn.innerText = "Start Speech";
+                recording = false;
+            } else {
+                navigator.mediaDevices.getUserMedia({audio: true})
+                    .then(stream => {
+                        mediaRecorder = new MediaRecorder(stream);
+                        audioChunks = [];
+                        mediaRecorder.addEventListener("dataavailable", event => {
+                            audioChunks.push(event.data);
+                        });
+                        mediaRecorder.addEventListener("stop", () => {
+                            const audioBlob = new Blob(audioChunks, {type: 'audio/mp3'});
+                            const formData = new FormData();
+                            formData.append('recording', audioBlob, 'recording.mp3');
+                            fetch("{{ url_for('save_recording') }}", {
+                                method: "POST",
+                                body: formData
+                            })
+                                .then(response => response.json())
+                                .then(data => {
+                                    console.log("Recording saved:", data);
+                                    appendMessage("Bot", data.message);
+                                    if (data.order_items && Array.isArray(data.order_items)) {
+                                        data.order_items.forEach(item => {
+                                            appendOrderItem(item);
+                                        });
+                                    }
+                                    const audioURL = "/records/" + data.file;
+                                    const audioEl = document.createElement("audio");
+                                    audioEl.controls = true;
+                                    audioEl.src = audioURL;
+                                    chatbotMessages.appendChild(audioEl);
+                                })
+                                .catch(error => {
+                                    console.error("Error saving recording:", error);
+                                });
+                        });
+                        mediaRecorder.start();
+                        speechBtn.innerText = "Stop Speech";
+                        recording = true;
+                    })
+                    .catch(error => {
+                        console.error("Error accessing microphone:", error);
+                    });
+            }
+        });
+
+        window.addEventListener("beforeunload", function () {
+            if (conversation.trim() !== "") {
+                saveConversation();
+            }
+        });
+    });
+</script>
+</body>
+</html>

@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Supermarket Home</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        /* Enhanced chatbot widget styles */
+        #chatbot-container {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 350px;
+            max-width: 95%;
+            background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+            border: 1px solid #ccc;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+        }
+
+        #chatbot-header {
+            background: #28a745;
+            color: #fff;
+            padding: 12px;
+            text-align: center;
+            font-size: 1.2rem;
+            font-weight: bold;
+        }
+
+        #chatbot-messages {
+            padding: 12px;
+            height: 220px;
+            overflow-y: auto;
+            background: #fff;
+            border-bottom: 1px solid #ccc;
+        }
+
+        #chatbot-input-area {
+            display: flex;
+            padding: 10px;
+            gap: 5px;
+            background: #f1f1f1;
+        }
+
+        #chatbot-input {
+            flex: 1;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 1rem;
+        }
+
+        #chatbot-send, #chatbot-speech {
+            padding: 8px 12px;
+            background: #28a745;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+
+        #chatbot-send:hover, #chatbot-speech:hover {
+            background: #218838;
+        }
+
+        /* Order item styling */
+        .order-item {
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 8px;
+            margin: 8px 0;
+            display: flex;
+            align-items: center;
+            background: #fff;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .order-item img {
+            width: 60px;
+            height: auto;
+            border-radius: 4px;
+            margin-right: 10px;
+        }
+
+        .order-item-details p {
+            margin: 2px 0;
+            font-size: 0.95rem;
+        }
+    </style>
+</head>
+<body>
+<header>
+    <h1>Supermarket Application</h1>
+</header>
+<nav>
+    <a href="{{ url_for('index') }}">Home</a>
+    {% if 'username' in session %}
+    {% if session.role == 'admin' %}
+    <a href="{{ url_for('admin_categories') }}">Manage Categories</a>
+    <a href="{{ url_for('admin_orders') }}">Orders</a>
+    {% endif %}
+    <a href="{{ url_for('logout') }}">Logout ({{ session.username }})</a>
+    {% else %}
+    <a href="{{ url_for('login') }}">Login</a>
+    <a href="{{ url_for('register') }}">Register</a>
+    {% endif %}
+    <a href="{{ url_for('cart') }}">Cart</a>
+</nav>
+<div class="container">
+    <h2>Categories</h2>
+    <div class="category-list">
+        {% for cat in categories %}
+        <div class="category-card">
+            <a href="{{ url_for('category_details', category_id=cat['category_id']) }}">
+                <img src="{{ url_for('static', filename=cat['image_path']) }}" alt="{{ cat['category_name'] }}">
+                <h3>{{ cat['category_name'] }}</h3>
+            </a>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Chatbot Widget -->
+<div id="chatbot-container">
+    <div id="chatbot-header">Chat with Our AI</div>
+    <div id="chatbot-messages"></div>
+    <div id="chatbot-input-area">
+        <input type="text" id="chatbot-input" placeholder="Type your message...">
+        <button id="chatbot-send">Send</button>
+        <button id="chatbot-speech">Start Speech</button>
+    </div>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        let conversation = "";
+        const chatbotMessages = document.getElementById("chatbot-messages");
+        const chatbotInput = document.getElementById("chatbot-input");
+        const sendBtn = document.getElementById("chatbot-send");
+        const speechBtn = document.getElementById("chatbot-speech");
+
+        // Voice recording variables
+        let mediaRecorder;
+        let audioChunks = [];
+        let recording = false;
+
+        // TEXT-TO-SPEECH function
+        function speakText(text) {
+            if ('speechSynthesis' in window) {
+                const utterance = new SpeechSynthesisUtterance(text);
+                // optionally set utterance.lang = 'en-US' or other
+                speechSynthesis.speak(utterance);
+            } else {
+                console.warn("Speech Synthesis not supported in this browser.");
+            }
+        }
+
+        // Append a message to the chat window
+        function appendMessage(sender, message) {
+            const msgDiv = document.createElement("div");
+            msgDiv.style.marginBottom = "10px";
+            msgDiv.innerHTML = `<strong>${sender}:</strong> ${message}`;
+            chatbotMessages.appendChild(msgDiv);
+            chatbotMessages.scrollTop = chatbotMessages.scrollHeight;
+            // TTS only for Bot
+            if (sender === "Bot") {
+                speakText(message);
+            }
+        }
+
+        // If the server returns order_items, we can display them
+        function appendOrderItem(item) {
+            const itemDiv = document.createElement("div");
+            itemDiv.classList.add("order-item");
+            itemDiv.innerHTML = `
+        <img src="{{ url_for('static', filename='') }}${item.image}" alt="${item.name}">
+        <div class="order-item-details">
+          <p><strong>${item.name}</strong></p>
+          <p>Price: $${item.price}</p>
+          <p>Quantity: ${item.quantity}</p>
+        </div>
+      `;
+            chatbotMessages.appendChild(itemDiv);
+            chatbotMessages.scrollTop = chatbotMessages.scrollHeight;
+        }
+
+        // Save conversation to server
+        function saveConversation() {
+            return fetch("{{ url_for('save_conversation') }}", {
+                method: "POST",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify({conversation: conversation})
+            })
+                .then(response => response.json())
+                .then(data => {
+                    console.log("Conversation saved:", data);
+                    return data;
+                })
+                .catch(error => {
+                    console.error("Error saving conversation:", error);
+                });
+        }
+
+        // Send a text message to the chatbot
+        async function sendMessage() {
+            const userText = chatbotInput.value.trim();
+            if (!userText) return;
+            appendMessage("You", userText);
+            conversation += "You: " + userText + "\n";
+            chatbotInput.value = "";
+
+            // Check if user typed "checkout"
+            const normalized = userText.replace(/\s/g, "").toLowerCase();
+            if (normalized === "checkout") {
+                try {
+                    const response = await fetch("{{ url_for('chat_checkout') }}", {
+                        method: "POST",
+                        headers: {"Content-Type": "application/json"}
+                    });
+                    const data = await response.json();
+                    appendMessage("Bot", data.message);
+                    conversation += "Bot: " + data.message + "\n";
+                    if (data.order_items && Array.isArray(data.order_items)) {
+                        data.order_items.forEach(item => {
+                            appendOrderItem(item);
+                        });
+                    }
+                    await saveConversation();
+                } catch (error) {
+                    console.error("Error during checkout:", error);
+                    appendMessage("Bot", "There was an error processing your checkout.");
+                }
+                return;
+            }
+
+            // Otherwise, call /my_own_ai
+            try {
+                const response = await fetch("{{ url_for('my_own_ai') }}", {
+                    method: "POST",
+                    headers: {"Content-Type": "application/json"},
+                    body: JSON.stringify({user_message: userText})
+                });
+                const data = await response.json();
+                appendMessage("Bot", data.bot_reply);
+                // if there's an order item or product_image, you can display it
+                // conversation += "Bot: " + data.bot_reply + "\n";
+                await saveConversation();
+            } catch (error) {
+                console.error("Error calling /my_own_ai:", error);
+                appendMessage("Bot", "Error with custom AI.");
+            }
+        }
+
+        sendBtn.addEventListener("click", sendMessage);
+        chatbotInput.addEventListener("keyup", function (event) {
+            if (event.key === "Enter") {
+                sendMessage();
+            }
+        });
+
+        // Toggle start/stop audio recording
+        function toggleRecording() {
+            if (recording) {
+                mediaRecorder.stop();
+                speechBtn.innerText = "Start Speech";
+                recording = false;
+            } else {
+                navigator.mediaDevices.getUserMedia({audio: true})
+                    .then(stream => {
+                        mediaRecorder = new MediaRecorder(stream);
+                        audioChunks = [];
+                        mediaRecorder.addEventListener("dataavailable", event => {
+                            audioChunks.push(event.data);
+                        });
+                        mediaRecorder.addEventListener("stop", () => {
+                            // Send audio to /save_recording
+                            const audioBlob = new Blob(audioChunks, {type: 'audio/mp3'});
+                            const formData = new FormData();
+                            formData.append('recording', audioBlob, 'recording.mp3');
+                            fetch("{{ url_for('save_recording') }}", {
+                                method: "POST",
+                                body: formData
+                            })
+                                .then(response => response.json())
+                                .then(data => {
+                                    console.log("Recording saved:", data);
+                                    appendMessage("Bot", data.message);
+                                    // If there's an order item or order_items:
+                                    if (data.order_items && Array.isArray(data.order_items)) {
+                                        data.order_items.forEach(item => {
+                                            appendOrderItem(item);
+                                        });
+                                    }
+                                    // Optionally create audio playback
+                                    const audioURL = "/records/" + data.file;
+                                    const audioEl = document.createElement("audio");
+                                    audioEl.controls = true;
+                                    audioEl.src = audioURL;
+                                    chatbotMessages.appendChild(audioEl);
+                                })
+                                .catch(error => {
+                                    console.error("Error saving recording:", error);
+                                });
+                        });
+                        mediaRecorder.start();
+                        speechBtn.innerText = "Stop Speech";
+                        recording = true;
+                    })
+                    .catch(error => {
+                        console.error("Error accessing microphone:", error);
+                    });
+            }
+        }
+
+        // Link the speech button to toggleRecording
+        speechBtn.addEventListener("click", function () {
+            toggleRecording();
+        });
+
+        // Also let user press SPACE to toggle audio
+        document.addEventListener("keydown", function (e) {
+            const activeEl = document.activeElement;
+            if (activeEl && (activeEl.tagName === "INPUT" || activeEl.tagName === "TEXTAREA")) {
+                return;  // let user type spaces
+            }
+            if (e.code === "Space") {
+                e.preventDefault();
+                toggleRecording();
+            }
+        });
+
+        // On page unload, save conversation
+        window.addEventListener("beforeunload", function () {
+            if (conversation.trim() !== "") {
+                saveConversation();
+            }
+        });
+    });
+</script>
+</body>
+</html>
