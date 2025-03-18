@@ -6,7 +6,8 @@ from flask import Flask, render_template, request, redirect, url_for, session, g
 from werkzeug.utils import secure_filename
 from PIL import Image  # For image conversion
 import glob  # at the top if not already imported
-import openai
+import whisper
+model = whisper.load_model("base")  # You can change "base" to "small", "medium", or "large"
 
 app = Flask(__name__)
 app.secret_key = "YOUR_SECRET_KEY"
