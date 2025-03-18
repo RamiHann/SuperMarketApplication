@@ -8,8 +8,6 @@ from PIL import Image  # For image conversion
 import glob  # at the top if not already imported
 import openai
 
-openai.api_key = "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"
-
 app = Flask(__name__)
 app.secret_key = "YOUR_SECRET_KEY"
 DATABASE = "supermarket.db"
